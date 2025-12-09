@@ -1,0 +1,47 @@
+trigger: none
+
+pool: simple
+
+jobs:
+
+- job: Lint
+  displayName: Lint Job
+  steps:
+  - task: PowerShell@2
+    displayName: megalint
+    continueOnError: true
+    inputs:
+      targetType: 'inline'
+      script: |
+        npm install -g mega-linter-runner
+        mega-linter-runner
+
+
+- job: Build
+  displayName: Build
+  dependsOn: Lint
+  steps:
+  - task: PowerShell@2
+    displayName: Build artifacts
+    inputs:
+      targetType: 'inline'
+      script: |
+        mvn clean package
+         pwd
+  
+  - task: PowerShell@2
+    displayName: copy target folder to tomcat webapps path
+    inputs:
+      targetType: 'inline'
+      script: 'cp $(System.DefaultWorkingDirectory)\target\JavaLoginShowcase-1.0.0.war "C:\Program Files\Apache Software Foundation\Tomcat 9.0\webapps" -Force'
+
+  - task: PowerShell@2
+    displayName: run tomcat shutdown / startup command
+    inputs:
+      targetType: 'inline'
+      script: |
+        cd "C:\Program Files\Apache Software Foundation\Tomcat 9.0\bin"
+        
+        ./shutdown.bat
+        
+        ./startup.bat
